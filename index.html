@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Form Order Replica</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 420px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    h2 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-size: 22px;
+      text-align: center;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    input, select, textarea, button {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      font-size: 14px;
+    }
+
+    input[readonly] {
+      background: #f0f0f0;
+      font-weight: bold;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 90px;
+    }
+
+    .file-note {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
+
+    button {
+      background: black;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    .success {
+      display: none;
+      margin-top: 16px;
+      padding: 12px;
+      background: #eaf8ea;
+      border: 1px solid #b7e1b7;
+      border-radius: 10px;
+      color: #1d6b1d;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Form Order Replica</h2>
+
+    <form id="orderForm">
+      <div class="form-group">
+        <label for="name">Nama Customer</label>
+        <input type="text" id="name" name="name" placeholder="Masukkan nama customer" required />
+      </div>
+
+      <div class="form-group">
+        <label for="size">Pilih Ukuran Replica</label>
+        <select id="size" name="size" required>
+          <option value="">-- Pilih ukuran --</option>
+          <option value="6" data-price="300000">6 cm</option>
+          <option value="9" data-price="450000">9 cm</option>
+          <option value="12" data-price="600000">12 cm</option>
+          <option value="15" data-price="800000">15 cm</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="qty">Quantity</label>
+        <select id="qty" name="qty" required>
+          <option value="">-- Pilih quantity --</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="total">Total Pembayaran</label>
+        <input type="text" id="total" name="total" readonly placeholder="Otomatis terhitung" />
+      </div>
+
+      <div class="form-group">
+        <label for="proof">Upload Bukti Transfer</label>
+        <input 
+          type="file" 
+          id="proof" 
+          name="proof" 
+          accept="image/*" 
+          capture="environment" 
+          required 
+        />
+        <div class="file-note">Bisa langsung foto dari kamera HP atau upload dari galeri.</div>
+      </div>
+
+      <div class="form-group">
+        <label for="address">Alamat Pengiriman</label>
+        <textarea id="address" name="address" placeholder="Masukkan alamat lengkap" required></textarea>
+      </div>
+
+      <button type="submit">Submit Order</button>
+
+      <div class="success" id="successMessage">
+        Order berhasil dikirim.
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const sizeSelect = document.getElementById("size");
+    const qtySelect = document.getElementById("qty");
+    const totalInput = document.getElementById("total");
+    const form = document.getElementById("orderForm");
+    const successMessage = document.getElementById("successMessage");
+
+    function formatRupiah(number) {
+      return "Rp " + number.toLocaleString("id-ID");
+    }
+
+    function calculateTotal() {
+      const selectedOption = sizeSelect.options[sizeSelect.selectedIndex];
+      const price = Number(selectedOption.getAttribute("data-price")) || 0;
+      const qty = Number(qtySelect.value) || 0;
+      const total = price * qty;
+
+      totalInput.value = total > 0 ? formatRupiah(total) : "";
+    }
+
+    sizeSelect.addEventListener("change", calculateTotal);
+    qtySelect.addEventListener("change", calculateTotal);
+
+    form.addEventListener("submit", function(event) {
+      event.preventDefault();
+      successMessage.style.display = "block";
+      form.reset();
+      totalInput.value = "";
+    });
+  </script>
+</body>
+</html>
