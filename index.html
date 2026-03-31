@@ -89,6 +89,22 @@
       color: #1d6b1d;
       font-size: 14px;
     }
+
+    .error {
+      display: none;
+      margin-top: 16px;
+      padding: 12px;
+      background: #fdeaea;
+      border: 1px solid #efb3b3;
+      border-radius: 10px;
+      color: #a11a1a;
+      font-size: 14px;
+    }
+
+    button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -129,13 +145,13 @@
 
       <div class="form-group">
         <label for="proof">Upload Bukti Transfer</label>
-        <input 
-          type="file" 
-          id="proof" 
-          name="proof" 
-          accept="image/*" 
-          capture="environment" 
-          required 
+        <input
+          type="file"
+          id="proof"
+          name="proof"
+          accept="image/*"
+          capture="environment"
+          required
         />
         <div class="file-note">Bisa langsung foto dari kamera HP atau upload dari galeri.</div>
       </div>
@@ -145,11 +161,10 @@
         <textarea id="address" name="address" placeholder="Masukkan alamat lengkap" required></textarea>
       </div>
 
-      <button type="submit">Submit Order</button>
+      <button type="submit" id="submitBtn">Submit Order</button>
 
-      <div class="success" id="successMessage">
-        Order berhasil dikirim.
-      </div>
+      <div class="success" id="successMessage"></div>
+      <div class="error" id="errorMessage"></div>
     </form>
   </div>
 
@@ -159,6 +174,10 @@
     const totalInput = document.getElementById("total");
     const form = document.getElementById("orderForm");
     const successMessage = document.getElementById("successMessage");
+    const errorMessage = document.getElementById("errorMessage");
+    const submitBtn = document.getElementById("submitBtn");
+
+    const scriptURL = "https://script.google.com/macros/s/AKfycbzSf2XmpjPwXfL-7h8uBvCTO9ZOlLh1sh7sx9XY-wuhv77o3uhh2xCUMS9troT0P0UYiA/exec";
 
     function formatRupiah(number) {
       return "Rp " + number.toLocaleString("id-ID");
@@ -173,51 +192,82 @@
       totalInput.value = total > 0 ? formatRupiah(total) : "";
     }
 
+    function resetMessages() {
+      successMessage.style.display = "none";
+      successMessage.innerText = "";
+      errorMessage.style.display = "none";
+      errorMessage.innerText = "";
+    }
+
     sizeSelect.addEventListener("change", calculateTotal);
     qtySelect.addEventListener("change", calculateTotal);
 
-   const scriptURL = "https://script.google.com/macros/s/AKfycbwE427-0T3DgKC-D6f8a3FD220PHg_CAzi7IDyDuvctXjEdNOj27mrCk3gtoGAxx3fdhQ/exec";
+    form.addEventListener("submit", async function(event) {
+      event.preventDefault();
+      resetMessages();
 
-form.addEventListener("submit", async function(event) {
-  event.preventDefault();
+      const file = document.getElementById("proof").files[0];
 
-  const file = document.getElementById("proof").files[0];
+      if (!file) {
+        errorMessage.style.display = "block";
+        errorMessage.innerText = "Upload bukti transfer dulu.";
+        return;
+      }
 
-  if (!file) {
-    alert("Upload bukti transfer dulu");
-    return;
-  }
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Submitting...";
 
-  const reader = new FileReader();
-  reader.readAsDataURL(file);
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
 
-  reader.onload = async function () {
-    const base64 = reader.result.split(",")[1];
+      reader.onload = async function() {
+        try {
+          const base64 = reader.result.split(",")[1];
 
-    const data = {
-      nama: document.getElementById("name").value,
-      size: document.getElementById("size").value,
-      qty: document.getElementById("qty").value,
-      total: totalInput.value,
-      alamat: document.getElementById("address").value,
-      fileBase64: base64,
-      fileName: file.name,
-      fileType: file.type
-    };
+          const data = {
+            nama: document.getElementById("name").value,
+            size: document.getElementById("size").value,
+            qty: document.getElementById("qty").value,
+            total: totalInput.value,
+            alamat: document.getElementById("address").value,
+            fileBase64: base64,
+            fileName: file.name,
+            fileType: file.type
+          };
 
-    try {
-      await fetch(scriptURL, {
-        method: "POST",
-        body: JSON.stringify(data)
-      });
+          const response = await fetch(scriptURL, {
+            method: "POST",
+            body: JSON.stringify(data)
+          });
 
-      successMessage.style.display = "block";
-      form.reset();
-      totalInput.value = "";
+          const result = await response.json();
 
-    } catch (err) {
-      alert("Gagal kirim data");
-      console.error(err);
-    }
-  };
-});
+          if (result.status === "success") {
+            successMessage.style.display = "block";
+            successMessage.innerText = "Submission success. Data berhasil dikirim.";
+            form.reset();
+            totalInput.value = "";
+          } else {
+            errorMessage.style.display = "block";
+            errorMessage.innerText = "Gagal: " + (result.message || "Unknown error");
+          }
+        } catch (err) {
+          console.error(err);
+          errorMessage.style.display = "block";
+          errorMessage.innerText = "Gagal kirim data. Cek Apps Script URL, deployment, atau koneksi internet.";
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Submit Order";
+        }
+      };
+
+      reader.onerror = function() {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Submit Order";
+        errorMessage.style.display = "block";
+        errorMessage.innerText = "Gagal membaca file bukti transfer.";
+      };
+    });
+  </script>
+</body>
+</html>
