@@ -176,12 +176,48 @@
     sizeSelect.addEventListener("change", calculateTotal);
     qtySelect.addEventListener("change", calculateTotal);
 
-    form.addEventListener("submit", function(event) {
-      event.preventDefault();
+   const scriptURL = "https://script.google.com/macros/s/AKfycbwE427-0T3DgKC-D6f8a3FD220PHg_CAzi7IDyDuvctXjEdNOj27mrCk3gtoGAxx3fdhQ/exec";
+
+form.addEventListener("submit", async function(event) {
+  event.preventDefault();
+
+  const file = document.getElementById("proof").files[0];
+
+  if (!file) {
+    alert("Upload bukti transfer dulu");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+
+  reader.onload = async function () {
+    const base64 = reader.result.split(",")[1];
+
+    const data = {
+      nama: document.getElementById("name").value,
+      size: document.getElementById("size").value,
+      qty: document.getElementById("qty").value,
+      total: totalInput.value,
+      alamat: document.getElementById("address").value,
+      fileBase64: base64,
+      fileName: file.name,
+      fileType: file.type
+    };
+
+    try {
+      await fetch(scriptURL, {
+        method: "POST",
+        body: JSON.stringify(data)
+      });
+
       successMessage.style.display = "block";
       form.reset();
       totalInput.value = "";
-    });
-  </script>
-</body>
-</html>
+
+    } catch (err) {
+      alert("Gagal kirim data");
+      console.error(err);
+    }
+  };
+});
